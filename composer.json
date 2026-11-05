@@ -1,0 +1,29 @@
+{
+    "name": "dbravoan/dbcms-module-blog",
+    "type": "dbcms-module",
+    "description": "Multi-author, multi-market blog engine with categories, tags, reading time, and embeddable widgets",
+    "license": "MIT",
+    "require": {
+        "dbravoan/dbcms-core": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "DbCms\\Modules\\Blog\\": "./"
+        }
+    },
+    "extra": {
+        "dbcms": {
+            "name": "Blog Engine",
+            "identifier": "blog",
+            "author": "dbCMS Core Team",
+            "description": "Multi-author, multi-market blog engine with categories, tags, reading time, and embeddable widgets",
+            "provider": "DbCms\\Modules\\Blog\\BlogModuleServiceProvider",
+            "is_pageable": true,
+            "repository": "https://github.com/dbravoan/dbcms-module-blog",
+            "morphs": {
+                "post": "DbCms\\Modules\\Blog\\Models\\Post",
+                "blog_category": "DbCms\\Modules\\Blog\\Models\\Category"
+            }
+        }
+    }
+}
