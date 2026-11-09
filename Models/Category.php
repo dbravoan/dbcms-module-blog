@@ -7,6 +7,7 @@ namespace DbCms\Modules\Blog\Models;
 use DbCms\Core\Content\Contracts\TranslatableEntity;
 use DbCms\Core\Contracts\Services\LocalizationServiceInterface;
 use DbCms\Core\Models\Market;
+use DbCms\Core\Services\Content\PublicTranslation;
 use DbCms\Core\Traits\MarketScoped;
 use DbCms\Core\Traits\Translatable;
 use Illuminate\Database\Eloquent\Collection;
@@ -91,20 +92,22 @@ class Category extends Model implements TranslatableEntity
     /**
      * Build recursive slug path for this category (e.g. 'tech/ai/llms').
      */
-    public function getSlugPath(string $locale): string
+    public function getSlugPath(string $locale, ?Market $market = null): string
     {
+        $market ??= app()->bound('current.market') && app('current.market') instanceof Market ? app('current.market') : null;
         $slugs = [];
         $current = $this;
 
         while ($current !== null) {
-            $trans = ($current->relationLoaded('translations') ? $current->translations->where('locale', $locale)->first() : null)
-                ?? $current->translations()->where('locale', $locale)->first()
-                ?? ($current->relationLoaded('translations') ? $current->translations->first() : null)
-                ?? $current->translations()->first();
+            /** @var CategoryTranslation|null $trans */
+            $trans = PublicTranslation::resolve($current, $locale, $market);
 
-            if ($trans && ! empty($trans->slug)) {
-                array_unshift($slugs, $trans->slug);
+            // A category without a translation is not public in this language.
+            if ($trans === null || empty($trans->slug)) {
+                return '';
             }
+
+            array_unshift($slugs, $trans->slug);
 
             if ($current->parent_id === null) {
                 break;
@@ -152,11 +155,17 @@ class Category extends Model implements TranslatableEntity
         $ancestors = array_reverse($ancestors);
 
         foreach ($ancestors as $ancestor) {
-            $trans = $ancestor->translations->where('locale', $locale)->first()
-                ?? $ancestor->translations()->where('locale', $locale)->first()
-                ?? $ancestor->translations()->first();
+            /** @var CategoryTranslation|null $trans */
+            $trans = PublicTranslation::resolve($ancestor, $locale, $market);
+            if ($trans === null) {
+                continue;
+            }
 
-            $ancestorPath = $ancestor->getSlugPath($locale);
+            $ancestorPath = $ancestor->getSlugPath($locale, $market);
+            if ($ancestorPath === '') {
+                continue;
+            }
+
             $trail[] = [
                 'title' => $trans->name ?? 'Categoría',
                 'url' => $localization->url("/{$blogSlug}/{$ancestorPath}", $market),
@@ -184,7 +193,7 @@ class Category extends Model implements TranslatableEntity
         })->with(['translations', 'parent.translations'])->get();
 
         foreach ($candidates as $candidate) {
-            if ($candidate->getSlugPath($locale) === trim($slugPath, '/')) {
+            if ($candidate->getSlugPath($locale, $market) === trim($slugPath, '/')) {
                 return $candidate;
             }
         }

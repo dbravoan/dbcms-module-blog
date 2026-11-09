@@ -49,7 +49,7 @@ final class CommentPublicationService implements CommentPublicationServiceInterf
             $approved = ! (bool) $this->settings->get('blog', 'comments_require_approval', false);
             $comment = Comment::create(['post_id' => $post->getKey(), 'parent_id' => $submission->parentId, 'author_name' => $submission->authorName, 'author_email' => $submission->authorEmail, 'content' => $submission->content, 'is_approved' => $approved]);
             DB::afterCommit(function () use ($post, $comment): void {
-                $this->notifications->notify(module: 'blog', type: 'info', title: 'Nuevo comentario en el blog', message: 'Comentario #'.$comment->getKey().'.', actionUrl: route('admin.blog.posts.edit', $post->getKey()), data: ['comment_id' => $comment->getKey(), 'post_id' => $post->getKey(), 'required_permission' => 'manage:posts']);
+                $this->notifications->notify(module: 'blog', type: 'info', title: 'Nuevo comentario en el blog', message: 'Comentario #'.$comment->getKey().'.', actionUrl: route('admin.blog.comments.index'), data: ['comment_id' => $comment->getKey(), 'post_id' => $post->getKey(), 'required_permission' => 'manage:posts']);
             });
             $message = $approved ? '¡Comentario publicado correctamente!' : 'Tu comentario ha sido enviado y se publicará tras ser revisado.';
 

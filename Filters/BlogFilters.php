@@ -11,6 +11,7 @@ use DbCms\Core\Filters\FilterDimension;
 use DbCms\Core\Filters\FilterSet;
 use DbCms\Core\Filters\FilterUrlBuilder;
 use DbCms\Core\Models\Market;
+use DbCms\Core\Services\Content\PublicTranslation;
 use DbCms\Modules\Blog\Models\Category;
 use DbCms\Modules\Blog\Models\Post;
 use DbCms\Modules\Blog\Models\Tag;
@@ -94,8 +95,8 @@ final class BlogFilters implements FilterableModule, FilterableResults
         $items = [];
 
         foreach ($paginator?->items() ?? [] as $post) {
-            $translation = $post->translations->firstWhere('locale', $locale) ?? $post->translations->first();
-            $slug = (string) ($translation->slug ?? '');
+            $translation = PublicTranslation::resolve($post, $locale, $market);
+            $slug = (string) ($translation?->getAttribute('slug') ?? '');
 
             if ($slug === '') {
                 continue;

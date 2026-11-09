@@ -9,9 +9,11 @@ use DbCms\Core\DTOs\Front\FrontPageData;
 use DbCms\Core\DTOs\Front\PublicContentContext;
 use DbCms\Core\Sections\SectionRendererService;
 use DbCms\Core\Services\Cms\FrontViewResolver;
+use DbCms\Core\Services\Content\PublicTranslation;
 use DbCms\Core\Services\Seo\SeoMetaService;
 use DbCms\Modules\Blog\Contracts\BlogArticleReaderInterface;
 use DbCms\Modules\Blog\Models\Post;
+use DbCms\Modules\Blog\Models\PostTranslation;
 
 final class BlogArticleReader implements BlogArticleReaderInterface
 {
@@ -36,8 +38,8 @@ final class BlogArticleReader implements BlogArticleReaderInterface
             return FrontPageData::missing();
         }
 
-        $activeTranslation = $post->translations->where('locale', $locale)->first()
-            ?? $post->translations->first();
+        /** @var PostTranslation|null $activeTranslation */
+        $activeTranslation = PublicTranslation::resolve($post, $locale, $market);
         if ($activeTranslation === null) {
             return FrontPageData::missing();
         }

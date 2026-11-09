@@ -5,17 +5,19 @@ declare(strict_types=1);
 namespace DbCms\Modules\Blog\Blocks;
 
 use DbCms\Core\Blocks\AbstractBlockType;
+use DbCms\Core\Blocks\Contracts\ContextualBlockReferencesInterface;
 use DbCms\Core\Content\Contracts\PublicWidgetSemanticContributorInterface;
 use DbCms\Core\Contracts\Services\LocalizationServiceInterface;
 use DbCms\Core\Contracts\Services\PublicContentDiscoveryInterface;
 use DbCms\Core\Models\Market;
 use DbCms\Core\Sections\SectionLayout;
 use DbCms\Core\Services\Cms\FrontViewResolver;
+use DbCms\Core\Services\Content\PublicTranslation;
 use DbCms\Modules\Blog\Models\Category;
 use DbCms\Modules\Blog\Models\Post;
 use Illuminate\Database\Eloquent\Builder;
 
-class BlogPostsBlock extends AbstractBlockType implements PublicWidgetSemanticContributorInterface
+class BlogPostsBlock extends AbstractBlockType implements ContextualBlockReferencesInterface, PublicWidgetSemanticContributorInterface
 {
     public function getType(): string
     {
@@ -67,6 +69,28 @@ class BlogPostsBlock extends AbstractBlockType implements PublicWidgetSemanticCo
         return [
             'blog_categories' => Category::with('translations')->get()->map(fn ($category): array => ['id' => $category->id, 'name' => $category->translations->first()->name ?? (string) $category->id, 'slug' => $category->translations->first()->slug ?? ''])->all(),
             'blog_posts' => Post::published()->with('translations')->latest()->limit(20)->get()->map(fn ($post): array => ['id' => $post->id, 'title' => $post->translations->first()->title ?? (string) $post->id, 'slug' => $post->translations->first()->slug ?? ''])->all(),
+        ];
+    }
+
+    public function getContextualEditorData(Market $market, string $locale): array
+    {
+        $discovery = app(PublicContentDiscoveryInterface::class);
+        /** @var Builder<Category> $categories */
+        $categories = $discovery->query('blog_category', $market, $locale);
+        /** @var Builder<Post> $items */
+        $items = $discovery->query('post', $market, $locale);
+
+        return [
+            'blog_categories' => array_values($categories->orderBy('id')->get()->map(static function (Category $category) use ($market, $locale): array {
+                $translation = PublicTranslation::resolve($category, $locale, $market);
+
+                return ['id' => $category->id, 'name' => (string) $translation?->getAttribute('name'), 'slug' => (string) $translation?->getAttribute('slug')];
+            })->all()),
+            'blog_posts' => array_values($items->orderBy('id')->get()->map(static function (Post $item) use ($market, $locale): array {
+                $translation = PublicTranslation::resolve($item, $locale, $market);
+
+                return ['id' => $item->id, 'title' => (string) $translation?->getAttribute('title'), 'slug' => (string) $translation?->getAttribute('slug')];
+            })->all()),
         ];
     }
 
@@ -135,18 +159,23 @@ class BlogPostsBlock extends AbstractBlockType implements PublicWidgetSemanticCo
         }
         $limit = min(50, max(1, (int) ($payload['limit'] ?? 3)));
 
-        return $query->latest('published_at')->orderByDesc('id')->limit($limit)->get()->map(function (Post $entity) use ($discovery, $market, $locale): array {
-            $translation = $entity->translations->firstWhere('locale', $locale);
+        return $query->latest('published_at')->orderByDesc('id')->limit($limit)->get()->map(function (Post $entity) use ($discovery, $market, $locale): ?array {
+            $translation = PublicTranslation::resolve($entity, $locale, $market);
+            $slug = (string) ($translation?->getAttribute('slug') ?? '');
+            if ($slug === '') {
+                return null;
+            }
+            $categoryTranslation = $entity->category ? PublicTranslation::resolve($entity->category, $locale, $market) : null;
 
             return [
-                'title' => (string) $translation?->title,
-                'summary' => (string) $translation?->summary,
+                'title' => (string) $translation?->getAttribute('title'),
+                'summary' => (string) $translation?->getAttribute('summary'),
                 'image' => (string) $entity->featured_image,
-                'url' => $discovery->url('post', $market, $locale, (string) $translation?->slug),
-                'badge' => (string) $entity->category?->translations->firstWhere('locale', $locale)?->name,
+                'url' => $discovery->url('post', $market, $locale, $slug),
+                'badge' => (string) ($categoryTranslation?->getAttribute('name') ?? ''),
                 'cta_label' => 'Leer artículo',
             ];
-        })->all();
+        })->filter()->values()->all();
     }
 
     public function render(array $payload, ?Market $market = null, ?string $locale = null): string

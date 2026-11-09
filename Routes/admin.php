@@ -7,6 +7,9 @@ use DbCms\Modules\Blog\Http\Controllers\Admin\CategoriesGetController;
 use DbCms\Modules\Blog\Http\Controllers\Admin\CategoryDeleteController;
 use DbCms\Modules\Blog\Http\Controllers\Admin\CategoryPostController;
 use DbCms\Modules\Blog\Http\Controllers\Admin\CategoryPutController;
+use DbCms\Modules\Blog\Http\Controllers\Admin\CommentApprovePostController;
+use DbCms\Modules\Blog\Http\Controllers\Admin\CommentDeleteController;
+use DbCms\Modules\Blog\Http\Controllers\Admin\CommentsGetController;
 use DbCms\Modules\Blog\Http\Controllers\Admin\PostCreateGetController;
 use DbCms\Modules\Blog\Http\Controllers\Admin\PostDeleteController;
 use DbCms\Modules\Blog\Http\Controllers\Admin\PostEditGetController;
@@ -29,4 +32,9 @@ Route::middleware([CheckPermission::class.':manage:posts'])->prefix('blog')->nam
     Route::post('/categories', CategoryPostController::class)->name('categories.store');
     Route::put('/categories/{category}', CategoryPutController::class)->name('categories.update');
     Route::delete('/categories/{category}', CategoryDeleteController::class)->name('categories.destroy');
+
+    // Comments moderation
+    Route::get('/comments', CommentsGetController::class)->name('comments.index');
+    Route::post('/comments/{comment}/approve', CommentApprovePostController::class)->name('comments.approve');
+    Route::delete('/comments/{comment}', CommentDeleteController::class)->name('comments.destroy');
 });

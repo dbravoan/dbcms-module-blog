@@ -1,18 +1,65 @@
-# Blog privacy
+# dbravoan/dbcms-module-blog 1.0.0
 
-Declare `legal.processing` owner `blog_comments` with purpose, legal basis, data,
-retention, recipients/transfers and positive `retention_days` before collecting
-comments. All supplied comment forms display the shared privacy notice; the
-submission service enforces the same requirement. The period runs from submission.
+## Qué hace
 
-Run `php artisan blog:privacy export --id=123 --verified` or `erase` after verifying
-the request and scope. Exports go to private local storage; remove them after
-fulfilment. `--verified` confirms the operator's review; it does not perform it.
-The daily `blog:privacy prune` uses the declared period, including inactive module
-data. Erasing a parent preserves other people's replies as root comments and
-invalidates public HTML caches. Review separately any personal information quoted
-by other authors. Notifications retain record IDs, without copying contact details.
+`dbravoan/dbcms-module-blog` aporta artículos de blog, categorías y comentarios. Instala/activa `blog` y configura slugs y comentarios.
 
-Reassign authored posts before deleting their author account. The guard also
-applies while Blog is inactive. Published article content and media remain editorial
-records and use their owner publication/removal controls.
+El detalle operativo de comentarios y derechos está en Privacidad y datos.
+
+## Requisitos y dependencias
+
+- `dbravoan/dbcms-core` `^1.0`
+- Identificador CMS: `blog`
+
+## Instalación y activación
+
+Instala el paquete con Composer e instálalo/actívalo en el CMS (`blog`).
+
+## Configuración
+
+Ajustes del módulo (claves por nombre):
+
+- `comments_enabled`
+- `comments_require_approval`
+- `slug_default`
+- `slug_{locale}`
+
+## Rutas
+
+Rutas admin/front de posts y comentarios en `Routes/` y el ServiceProvider (pageable).
+La moderación de comentarios está en `admin.blog.comments.index` y usa el permiso `manage:posts`.
+
+## Comandos Artisan
+
+- `blog:privacy` — firma: `blog:privacy {action : export, erase or prune} {--id=* : Explicit comment IDs} {--verified : Identity, scope and retention restrictions have been checked}`
+
+## Permisos
+
+- `manage:posts`
+
+## Privacidad y datos
+
+Antes de recoger comentarios declara `legal.processing` para `blog_comments`:
+finalidad, base jurídica, datos, destinatarios/transferencias y `retention_days`
+positivo desde el envío. Los formularios incluidos muestran el aviso compartido;
+el servicio de envío exige la misma configuración.
+
+Ejecuta `./vendor/bin/sail artisan blog:privacy export --id=123 --verified` o
+`erase` tras verificar identidad y alcance. Los exports se guardan localmente en
+privado; elimínalos después de atender la solicitud. `--verified` confirma una
+revisión previa del operador y no la realiza. `blog:privacy prune` diario aplica
+el plazo declarado también a datos del módulo inactivo.
+
+Borrar un padre conserva respuestas ajenas como comentarios raíz e invalida la
+caché HTML pública. Revisa aparte datos personales citados por otros autores.
+Las notificaciones conservan IDs, sin copiar contacto. Reasigna posts antes de
+borrar la cuenta de su autor: la protección también rige estando Blog inactivo.
+Artículos y medios publicados son registros editoriales y usan los controles de
+publicación/retirada de su propietario.
+
+## Enlaces
+
+- [Extensiones](../../../docs/EXTENSIONS.md)
+- [Núcleo y extensiones](../../../specs/CORE_AND_EXTENSIONS.md)
+- [README del núcleo](../../../packages/core/README.md)
+- [README del monorepo](../../../README.md)

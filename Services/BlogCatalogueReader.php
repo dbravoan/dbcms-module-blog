@@ -14,6 +14,7 @@ use DbCms\Core\Filters\FilterSeoResolver;
 use DbCms\Core\Filters\FilterSet;
 use DbCms\Core\Filters\FilterUrlBuilder;
 use DbCms\Core\Services\Cms\FrontViewResolver;
+use DbCms\Core\Services\Content\PublicTranslation;
 use DbCms\Core\Services\Seo\JsonLdSchemaService;
 use DbCms\Core\Services\Seo\SeoMetaService;
 use DbCms\Modules\Blog\Contracts\BlogCatalogueReaderInterface;
@@ -122,8 +123,8 @@ final class BlogCatalogueReader implements BlogCatalogueReaderInterface
         // CollectionPage + ItemList so search/AI engines read this as a listing.
         $items = [];
         foreach ($posts->items() as $post) {
-            $translation = $post->translations->firstWhere('locale', $locale) ?? $post->translations->first();
-            $slug = (string) ($translation->slug ?? '');
+            $translation = PublicTranslation::resolve($post, $locale, $market);
+            $slug = (string) ($translation?->getAttribute('slug') ?? '');
 
             if ($slug === '') {
                 continue;
@@ -215,7 +216,7 @@ final class BlogCatalogueReader implements BlogCatalogueReaderInterface
         // Build localized alternate hreflang tags for category
         $slugsMap = [];
         foreach ($category->translations as $t) {
-            $slugsMap[$t->locale] = $category->getSlugPath($t->locale);
+            $slugsMap[$t->locale] = $category->getSlugPath($t->locale, $market);
         }
         $hreflangs = $localization->buildHreflangCluster('{blogPrefix}/{slug}', $slugsMap, $category);
         $alternateUrls = $localization->buildAlternateUrlsMapForPath($context->segments, $slugsMap);
@@ -229,7 +230,10 @@ final class BlogCatalogueReader implements BlogCatalogueReaderInterface
 
         // Taxonomy archives are the indexable core of the blog: they deserve a
         // complete head (canonical + hreflang + CollectionPage JSON-LD).
-        $translation = $category->translations->firstWhere('locale', $locale) ?? $category->translations->first();
+        $translation = PublicTranslation::resolve($category, $locale, $market);
+        if ($translation === null) {
+            return FrontPageData::missing();
+        }
         $canonicalUrl = $localization->url("/{$blogSlug}/{$canonicalSlugPath}", $market);
 
         $alternates = [];
@@ -243,8 +247,8 @@ final class BlogCatalogueReader implements BlogCatalogueReaderInterface
         $items = [];
 
         foreach ($posts->items() as $post) {
-            $postTranslation = $post->translations->firstWhere('locale', $locale) ?? $post->translations->first();
-            $postSlug = (string) ($postTranslation->slug ?? '');
+            $postTranslation = PublicTranslation::resolve($post, $locale, $market);
+            $postSlug = (string) ($postTranslation?->getAttribute('slug') ?? '');
 
             if ($postSlug === '') {
                 continue;

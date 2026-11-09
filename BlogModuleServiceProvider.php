@@ -202,6 +202,12 @@ class BlogModuleServiceProvider extends BaseModuleServiceProvider
                     'icon' => 'tag',
                     'permission' => 'manage:posts',
                 ],
+                [
+                    'title' => __('admin.nav.items.comments'),
+                    'route' => 'admin.blog.comments.index',
+                    'icon' => 'comments',
+                    'permission' => 'manage:posts',
+                ],
             ],
         ]];
     }

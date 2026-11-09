@@ -24,7 +24,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @forelse($posts as $post)
-                @php $t = $post->translations->where('locale', app()->getLocale())->first() ?? $post->translations->first(); @endphp
+                @php $t = public_translation($post); @endphp
                 <article class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-slate-100 overflow-hidden flex flex-col">
                     @if($post->featured_image)
                         <img src="{{ $post->featured_image }}" alt="{{ $t->title ?? '' }}" class="h-48 w-full object-cover">
@@ -32,7 +32,7 @@
                     <div class="p-6 flex-1 flex flex-col justify-between">
                         <div>
                             <div class="flex items-center gap-2 text-xs font-semibold text-indigo-600 mb-2">
-                                <span>{{ $post->category->translations->first()->name ?? 'Uncategorized' }}</span>
+                                <span>{{ public_translation($post->category)?->name ?? 'Uncategorized' }}</span>
                                 <span>•</span>
                                 <span>{{ $post->reading_time_minutes }} min read</span>
                             </div>
