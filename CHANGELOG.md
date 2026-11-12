@@ -7,6 +7,8 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.1.0] - 2026-11-12
+
 ### Añadido
 
 - Pantalla de moderación de comentarios con aprobación y eliminación.
@@ -15,6 +17,8 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 - Las traducciones públicas del blog y sus categorías no caen a otro idioma.
 - Las notificaciones de comentarios enlazan a la bandeja de moderación.
+
+- La dependencia mínima de core pasa a `^1.1` por las APIs compartidas que utiliza este paquete.
 
 ## [1.0.0] - 2026-11-05
 
