@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace DbCms\Modules\Blog\Blocks;
 
 use DbCms\Core\Blocks\AbstractBlockType;
-use DbCms\Core\Blocks\Contracts\ContextualBlockReferencesInterface;
+use DbCms\Core\Blocks\Contracts\SearchableBlockReferencesInterface;
 use DbCms\Core\Content\Contracts\PublicWidgetSemanticContributorInterface;
 use DbCms\Core\Contracts\Services\LocalizationServiceInterface;
 use DbCms\Core\Contracts\Services\PublicContentDiscoveryInterface;
@@ -16,8 +16,9 @@ use DbCms\Core\Services\Content\PublicTranslation;
 use DbCms\Modules\Blog\Models\Category;
 use DbCms\Modules\Blog\Models\Post;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 
-class BlogPostsBlock extends AbstractBlockType implements ContextualBlockReferencesInterface, PublicWidgetSemanticContributorInterface
+class BlogPostsBlock extends AbstractBlockType implements PublicWidgetSemanticContributorInterface, SearchableBlockReferencesInterface
 {
     public function getType(): string
     {
@@ -92,6 +93,51 @@ class BlogPostsBlock extends AbstractBlockType implements ContextualBlockReferen
                 return ['id' => $item->id, 'title' => (string) $translation?->getAttribute('title'), 'slug' => (string) $translation?->getAttribute('slug')];
             })->all()),
         ];
+    }
+
+    /** @return array{items:list<array<string,mixed>>,has_more:bool} */
+    public function searchReferences(Market $market, string $locale, string $source, string $search, int $limit, int $offset): array
+    {
+        [$type, $label] = $this->referenceSource($source);
+        $query = app(PublicContentDiscoveryInterface::class)->query($type, $market, $locale);
+        PublicTranslation::constrainResolvedField($query, $market, $locale, 'slug', 'like', '_%');
+        if (trim($search) !== '') {
+            PublicTranslation::constrainResolvedField($query, $market, $locale, $label, 'like', '%'.trim($search).'%');
+        }
+        $limit = max(1, min(50, $limit));
+        $records = $query->orderBy($query->getModel()->getQualifiedKeyName())->offset(max(0, $offset))->limit($limit + 1)->get();
+        $hasMore = $records->count() > $limit;
+        $items = [];
+        foreach ($records->take($limit) as $record) {
+            $translation = PublicTranslation::resolve($record, $locale, $market);
+            $items[] = ['id' => $record->getKey(), $label => (string) $translation?->getAttribute($label), 'slug' => (string) $translation?->getAttribute('slug')];
+        }
+
+        return ['items' => $items, 'has_more' => $hasMore];
+    }
+
+    public function referenceExists(Market $market, string $locale, string $source, string $key, string|int $value): bool
+    {
+        [$type, , $valueKey] = $this->referenceSource($source);
+        if ($key !== $valueKey) {
+            throw ValidationException::withMessages(['references' => 'Campo de referencia no admitido.']);
+        }
+        $query = app(PublicContentDiscoveryInterface::class)->query($type, $market, $locale);
+        PublicTranslation::constrainResolvedField($query, $market, $locale, 'slug', 'like', '_%');
+        if ($key === 'id') {
+            return $query->whereKey($value)->exists();
+        }
+        PublicTranslation::constrainResolvedField($query, $market, $locale, 'slug', '=', $value);
+
+        return $query->exists();
+    }
+
+    /** @return array{string,string,string} */
+    private function referenceSource(string $source): array
+    {
+        $sources = ['blog_categories' => ['blog_category', 'name', 'id'], 'blog_posts' => ['post', 'title', 'id']];
+
+        return $sources[$source] ?? throw ValidationException::withMessages(['references' => 'Origen de referencias no admitido.']);
     }
 
     public function getEditorSchema(): array

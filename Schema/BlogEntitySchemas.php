@@ -8,6 +8,7 @@ use DbCms\Core\Content\EntitySchema;
 use DbCms\Core\Content\PublicContentDefinition;
 use DbCms\Modules\Blog\Models\Category;
 use DbCms\Modules\Blog\Models\Post;
+use DbCms\Modules\Blog\Services\Blocks\PostBlockDataSource;
 use DbCms\Modules\Blog\Services\BlogEditorialPreview;
 use DbCms\Modules\Blog\Services\CategoryMutationHandler;
 use DbCms\Modules\Blog\Services\PostMutationHandler;
@@ -31,7 +32,7 @@ final class BlogEntitySchemas
         return new EntitySchema(
             type: 'post',
             previewHandler: BlogEditorialPreview::class,
-            publicContent: new PublicContentDefinition('posts', 'fa-solid fa-newspaper', includeHub: true),
+            publicContent: new PublicContentDefinition('posts', 'fa-solid fa-newspaper', includeHub: true, blockSource: PostBlockDataSource::class),
             label: 'Artículo de blog',
             model: Post::class,
             sectionable: true,

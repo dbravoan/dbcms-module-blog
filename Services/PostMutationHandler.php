@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace DbCms\Modules\Blog\Services;
 
+use DbCms\Core\Blocks\BlockTree;
+use DbCms\Core\Blocks\Contracts\BlockRegistryInterface;
 use DbCms\Core\Content\Contracts\EntityMutationHandlerInterface;
-use DbCms\Core\Sections\SectionLayout;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -33,10 +34,17 @@ final class PostMutationHandler implements EntityMutationHandlerInterface
                     if (! is_array($section)) {
                         continue;
                     }
-                    foreach (SectionLayout::blocks($section) as $block) {
-                        $content = $block['content'] ?? $block['body'] ?? null;
-                        if (is_string($content) && trim($content) !== '') {
-                            $chunks[] = $content;
+                    foreach (app(BlockTree::class)->nodes($section) as $block) {
+                        if (! app(BlockRegistryInterface::class)->isAvailable((string) ($block['type'] ?? 'text'))) {
+                            continue;
+                        }
+                        $schema = app(BlockRegistryInterface::class)->get((string) ($block['type'] ?? 'text'))?->getEditorSchema() ?? [];
+                        foreach (['content', 'body', 'text'] as $key) {
+                            $content = $block[$key] ?? null;
+                            if (isset($schema[$key]) && is_string($content) && trim($content) !== '' && ! array_key_exists($key, (array) ($block['bindings'] ?? []))) {
+                                $chunks[] = $content;
+                                break;
+                            }
                         }
                     }
                 }

@@ -8,7 +8,7 @@ El detalle operativo de comentarios y derechos está en Privacidad y datos.
 
 ## Requisitos y dependencias
 
-- `dbravoan/dbcms-core` `^1.0`
+- `dbravoan/dbcms-core` `^1.2`
 - Identificador CMS: `blog`
 
 ## Instalación y activación

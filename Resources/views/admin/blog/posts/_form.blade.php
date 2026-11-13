@@ -252,7 +252,7 @@
 
             <!-- Dynamic Block Manager Component (Identical to Pages) -->
             <x-admin.form-card class="">
-                <x-admin.block-manager :sections="$sectionsData" name="sections_json" :languages="$allLangs" :target="request('section')" />
+                <x-admin.block-manager entity-type="post" :entity-id="$post?->exists ? $post->getKey() : null" :sections="$sectionsData" name="sections_json" :languages="$allLangs" :target="request('section')" />
             </x-admin.form-card>
 
         </div>
