@@ -1,0 +1,2 @@
+import { defineConfig } from '@playwright/test';
+export default defineConfig({ testDir: '.', testMatch: 'module.spec.mjs', workers: 1, timeout: 30000, outputDir: process.env.DBCMS_BROWSER_RESULTS || '/tmp/dbcms-blog-browser', reporter: [['list']], use: { viewport: { width: 1480, height: 1050 }, reducedMotion: 'reduce', trace: 'retain-on-failure', screenshot: 'only-on-failure', launchOptions: process.env.DBCMS_BROWSER_CHROME ? { executablePath: process.env.DBCMS_BROWSER_CHROME } : {} } });

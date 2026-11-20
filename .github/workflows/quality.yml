@@ -1,0 +1,47 @@
+name: Package quality
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .build/composer-cache
+            .build/npm-cache
+          key: ${{ runner.os }}-dependencies-${{ hashFiles('tests/fixture/**/composer.lock', 'tests/fixture/**/package-lock.json', 'package-lock.json') }}
+          restore-keys: ${{ runner.os }}-dependencies-
+      - name: Check package and declared integrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          project=package-quality
+          trap 'docker compose -p "$project" down --volumes --remove-orphans' EXIT
+          docker compose -p "$project" build tools
+          profile_list=$(docker compose -p "$project" run --no-deps --rm -T tools php tooling/package.php profiles)
+          if [[ -z "$profile_list" ]]; then
+            echo "No test profiles declared." >&2
+            exit 1
+          fi
+          mapfile -t profiles <<< "$profile_list"
+          for profile in "${profiles[@]}"; do
+            printf 'Package quality profile: %s\n' "$profile"
+            export DBCMS_TEST_PROFILE="$profile"
+            docker compose -p "$project" run --rm -T tools composer check </dev/null
+            docker compose -p "$project" run --rm -T tools composer test </dev/null
+            docker compose -p "$project" run --rm -T tools composer test:dist </dev/null
+            docker compose -p "$project" down --volumes --remove-orphans
+          done
