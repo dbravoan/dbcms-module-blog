@@ -17,9 +17,9 @@ En **Sistema y ajustes → Módulos del sistema**, pulsa **Instalar y activar**
 en **Blog Engine**. El panel aplica sus migraciones y carga sus contribuciones.
 Desactivar conserva los datos y retira las contribuciones públicas.
 
-Para una aplicación nueva también puedes seleccionarlo con
-`dbcms new mi-web --modules=blog`. La configuración inicial del sitio se completa
-en `/install`.
+Para una aplicación nueva, usa `dbcms new mi-web --module=blog` con Installer
+0.2. Completa la configuración inicial en `/install`.
+[Guía de Installer](https://github.com/dbravoan/dbcms-installer#crear-una-web)
 
 ## Crear y publicar artículos
 
